@@ -1,5 +1,6 @@
 import React from 'react'
 import { Route, Routes } from 'react-router-dom'
+
 import Home from './pages/home'
 import About from './pages/About'
 import Doctors from './pages/Doctors'
@@ -12,10 +13,10 @@ import Navbar from './components/Navbar'
 
 
 
-
 const App = () => {
   return (
     <div className='mx-4 sm:mx-[10%]'>
+
       <Navbar />
       <Routes>
         <Route path='/' element={<Home/>}/>
@@ -27,6 +28,8 @@ const App = () => {
         <Route path='/my-profile' element={<MyProfile/>}/>
         <Route path='/my-appointments' element={<MyAppointments/>}/>
         <Route path='/appointment/:docId' element={<Appointment/>}/>
+
+
 
       </Routes>
     </div>

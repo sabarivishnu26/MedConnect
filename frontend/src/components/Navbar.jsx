@@ -7,7 +7,7 @@ const Navbar = () => {
     const [token,settoken]=useState(true)
   return (
     <div className='flex items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-400'>
-      <img className='w-44 cursor-pointer' src={assets.logo} alt=''/>
+      <img onClick={()=>navigate('/')} className='w-44 cursor-pointer' src={assets.logo} alt=''/>
       <ul className='hidden md:flex items-start gap-5 font-medium'>
         <NavLink to='/'>
             <li className='py-1'>Home</li>
@@ -35,8 +35,8 @@ const Navbar = () => {
                 <img className='w-2.5' src={assets.dropdown_icon} alt=''/>
                 <div className='absolute top-0 right-0 pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block'>
                     <div className='min-w-48 big-stone-100 rounded flex-col gap-4 p-4'>
-                        <p className='hover:text-black cursor-pointer'>My profile</p>
-                        <p className='hover:text-black cursor-pointer'>My appointments</p>
+                        <p onClick={()=>navigate('my-profile')} className='hover:text-black cursor-pointer'>My profile</p>
+                        <p onClick={()=>navigate('my-appointments')} className='hover:text-black cursor-pointer'>My appointments</p>
                         <p onClick={()=>settoken(false)}className='hover:text-black cursor-pointer'>Logout</p>
                     </div>
                 </div>

@@ -11,6 +11,16 @@
     @apply block
 }
 
+*{
+    font-family: Outfit;
+}
+
 ::-webkit-scrollbar{
     @apply hidden
+}
+
+@media (max-width:740){
+    .active p{
+        @apply text-white bg-primary
+    }
 }

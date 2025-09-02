@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import {assets} from '../assets/assets'
 import { NavLink, useNavigate } from 'react-router-dom'
+
 const Navbar = () => {
     const navigate=useNavigate()
     const [showMenu,setshowMenu]=useState(false)
@@ -51,10 +52,10 @@ const Navbar = () => {
             <img className='w-7' onClick={()=> showMenu(false)} src={assets.cross_icon} alt="" />
           </div>
           <ul className='flex flex-col items-center gap-2 mt-5 px-5 text-lg font-medium'>
-            <Navlink className='px-4 py-2 rounded inline-block' onClick={()=> showMenu(false)} to='/' ><p>Home</p></Navlink>
-            <Navlink className='px-4 py-2 rounded inline-block' onClick={()=> showMenu(false)} to='/doctors' ><p>All Doctors</p></Navlink>
-            <Navlink className='px-4 py-2 rounded inline-block' onClick={()=> showMenu(false)} to='/about'><p>About</p></Navlink>
-            <Navlink className='px-4 py-2 rounded inline-block' onClick={()=> showMenu(false)} to='/contact' ><p>Contact</p></Navlink>
+            <NavLink className='px-4 py-2 rounded inline-block' onClick={()=> showMenu(false)} to='/' ><p>Home</p></NavLink>
+            <NavLink className='px-4 py-2 rounded inline-block' onClick={()=> showMenu(false)} to='/doctors' ><p>All Doctors</p></NavLink>
+            <NavLink className='px-4 py-2 rounded inline-block' onClick={()=> showMenu(false)} to='/about'><p>About</p></NavLink>
+            <NavLink className='px-4 py-2 rounded inline-block' onClick={()=> showMenu(false)} to='/contact' ><p>Contact</p></NavLink>
           </ul>
         </div>
       </div>

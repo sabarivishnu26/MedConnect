@@ -6,6 +6,11 @@ const Navbar = () => {
     const navigate=useNavigate()
     const [showMenu,setshowMenu]=useState(false)
     const [token,settoken]=useState(true)
+    const [isDoctor, setIsDoctor] = useState(true); // false = user, true = doctor
+
+// Mock doctor and user profile pics
+    const doctorProfilePic = "https://randomuser.me/api/portraits/men/45.jpg";
+    const userProfilePic = assets.profile_pic;
   return (
     <div className='flex items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-400'>
       <img onClick={()=>navigate('/')} className='w-44 cursor-pointer' src={assets.logo} alt=''/>
@@ -29,22 +34,38 @@ const Navbar = () => {
 
       </ul>
       <div className='flex items-center gap-4'>
-        {
-            token 
-            ?<div className='flex items-center gap-2 cursor-pointer group relative'>
-                <img className='w-8 rounded-full' src={assets.profile_pic} alt=''/> 
-                <img className='w-2.5' src={assets.dropdown_icon} alt=''/>
-                <div className='absolute top-0 right-0 pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block'>
-                    <div className='min-w-48 big-stone-100 rounded flex-col gap-4 p-4'>
-                        <p onClick={()=>navigate('my-profile')} className='hover:text-black cursor-pointer'>My profile</p>
-                        <p onClick={()=>navigate('my-appointments')} className='hover:text-black cursor-pointer'>My appointments</p>
-                        <p onClick={()=>settoken(false)}className='hover:text-black cursor-pointer'>Logout</p>
-                    </div>
-                </div>
-            </div>
-            :<button onClick={()=>navigate('/login')} className='bg-primary text-white px-8 py-3 rounded-full font-light hidden md:block'>Login</button>
+        
+{
+  token ? (
+    <div className='flex items-center gap-2 cursor-pointer group relative'>
+      <img
+        className='w-8 rounded-full'
+        src={isDoctor ? doctorProfilePic : userProfilePic}
+        alt=''
+      />
+      <img className='w-2.5' src={assets.dropdown_icon} alt='' />
+      <div className='absolute top-0 right-0 pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block'>
+        <div className='min-w-48 big-stone-100 rounded flex-col gap-4 p-4'>
+          {isDoctor ? (
+            <>
+              <p onClick={() => navigate('doctor/dashboard')} className='hover:text-black cursor-pointer'>Dashboard</p>
+              <p onClick={() => settoken(false)} className='hover:text-black cursor-pointer'>Logout</p>
+            </>
+          ) : (
+            <>
+              <p onClick={() => navigate('my-profile')} className='hover:text-black cursor-pointer'>My profile</p>
+              <p onClick={() => navigate('my-appointments')} className='hover:text-black cursor-pointer'>My appointments</p>
+              <p onClick={() => settoken(false)} className='hover:text-black cursor-pointer'>Logout</p>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : (
+    <button onClick={() => navigate('/login')} className='bg-primary text-white px-8 py-3 rounded-full font-light hidden md:block'>Login</button>
+  )
+}
 
-        }
         <img onClick={()=>setshowMenu(true)} className='w-6 md:hidden' src={assets.menu_icon} alt="" />
         <div className={` $(showMenu ? 'fixed w-full' : 'h-0 w-0') md:hidden right-0 top-0 bottom-0 z-20 overflow-hidden bg-white transition-all`}>
           <div className='flex items-center justify-between px-5 py-6'>

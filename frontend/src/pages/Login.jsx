@@ -27,28 +27,6 @@ const Login = () => {
 
   const onSubmitHandler = async (event) => {
     event.preventDefault()
-
-    /*const payload = {
-      email,
-      password,
-      role,
-      ...(state === 'Sign Up' && { name })
-    }
-
-    const endpoint = state === 'Sign Up' ? '/api/auth/signup' : '/api/auth/login'
-
-    try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-
-      const data = await res.json()
-      console.log(data) // Handle success/failure here
-    } catch (error) {
-      console.error(error)
-    } */
   }
 
   return (

@@ -6,7 +6,7 @@ const Navbar = () => {
     const navigate=useNavigate()
     const [showMenu,setshowMenu]=useState(false)
     const [token,settoken]=useState(true)
-    const [isDoctor, setIsDoctor] = useState(true); // false = user, true = doctor
+    const [isDoctor, setIsDoctor] = useState(false); // false = user, true = doctor
 
 // Mock doctor and user profile pics
     const doctorProfilePic = "https://randomuser.me/api/portraits/men/45.jpg";

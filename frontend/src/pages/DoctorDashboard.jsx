@@ -94,6 +94,11 @@ function DoctorDashboard() {
     setAppointments((prev) => prev.filter((appt) => appt.id !== id));
   };
 
+  // Filter for schedule (accepted or completed)
+  const scheduledAppointments = appointments.filter(
+    (appt) => appt.status === 'scheduled' || appt.status === 'completed'
+  );
+
   return (
     <div className="max-w-2xl mx-auto mt-12">
       {/* Calendar */}
@@ -164,9 +169,9 @@ function DoctorDashboard() {
         </table>
       </div>
 
-      {/* Schedule Table */}
+      {/* All Appointments Table (with Accept/Cancel) */}
       <div>
-        <p className="ph-3 font-medium text-zinc-700 border-b mb-4">Schedule for {selectedDate}</p>
+        <p className="ph-3 font-medium text-zinc-700 border-b mb-4">Appointments for {selectedDate}</p>
         {appointments.length === 0 ? (
           <p className="text-center text-zinc-500 py-8">No appointments for this date.</p>
         ) : (
@@ -220,12 +225,49 @@ function DoctorDashboard() {
                           </button>
                         </div>
                       )}
-                      {appt.status === 'scheduled' && (
-                        <span className="text-blue-500">Scheduled</span>
-                      )}
-                      {appt.status === 'completed' && (
-                        <span className="text-green-600 font-semibold">Completed</span>
-                      )}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Schedule Table (only accepted/scheduled/completed) */}
+      <div className="mt-12">
+        <p className="ph-3 font-medium text-zinc-700 border-b mb-4">Today's Schedule</p>
+        {scheduledAppointments.length === 0 ? (
+          <p className="text-center text-zinc-500 py-8">No scheduled appointments yet.</p>
+        ) : (
+          <table className="w-full border text-left">
+            <thead>
+              <tr className="bg-indigo-50">
+                <th className="py-2 px-4">Time</th>
+                <th className="py-2 px-4">Patient</th>
+                <th className="py-2 px-4">Reason</th>
+                <th className="py-2 px-4">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {scheduledAppointments
+                .sort((a, b) => a.time.localeCompare(b.time))
+                .map((appt) => (
+                  <tr
+                    key={appt.id}
+                    className={`border-b ${appt.status === 'completed' ? 'border-green-500' : ''}`}
+                  >
+                    <td className="py-2 px-4 font-medium">{appt.time}</td>
+                    <td className="py-2 px-4 flex items-center gap-3">
+                      <img
+                        src={appt.user.profilePic}
+                        alt={appt.user.name}
+                        className="w-10 h-10 rounded-full bg-indigo-50 object-cover"
+                      />
+                      <span className="font-semibold text-neutral-800">{appt.user.name}</span>
+                    </td>
+                    <td className="py-2 px-4 text-zinc-600">{appt.reason}</td>
+                    <td className={`py-2 px-4 font-semibold ${appt.status === 'completed' ? 'text-green-600' : ''}`}>
+                      {appt.status === 'completed' ? 'Completed' : 'Scheduled'}
                     </td>
                   </tr>
                 ))}

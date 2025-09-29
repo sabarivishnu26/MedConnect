@@ -12,7 +12,7 @@ import Appointment from './pages/Appointment'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Footer from './components/Footer'
-
+import DoctorProfile from './pages/DoctorProfile';
 
 import DoctorDashboard from './pages/DoctorDashboard';
 
@@ -35,7 +35,7 @@ const App = () => {
         <Route path='/my-appointments' element={<MyAppointments/>}/>
         <Route path='/appointment/:docId' element={<Appointment/>}/>
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
-
+        <Route path="/doctor/profile" element={<DoctorProfile />} />
 
 
       </Routes>

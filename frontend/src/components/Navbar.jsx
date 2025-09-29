@@ -49,6 +49,7 @@ const Navbar = () => {
           {isDoctor ? (
             <>
               <p onClick={() => navigate('doctor/dashboard')} className='hover:text-black cursor-pointer'>Dashboard</p>
+              <p onClick={() => navigate('doctor/profile')} className='hover:text-black cursor-pointer'>Profile</p>
               <p onClick={() => settoken(false)} className='hover:text-black cursor-pointer'>Logout</p>
             </>
           ) : (

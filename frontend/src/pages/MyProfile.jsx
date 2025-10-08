@@ -1,30 +1,62 @@
-import React, { useState } from 'react'
-import {assets} from '../assets/assets'
+import React, { useState, useEffect } from 'react'
+import { assets } from '../assets/assets'
+import axios from "axios";
+
 const MyProfile = () => {
 
     const [userData, setUserData] = useState({
-        name: "Edward Vincent",
-        image: assets.profile_pic,
-        email: 'richardjameswap@gmail.com',
-        phone: '+1 123 456 789',
-        address: {
-            line1: '57th cross, Richand ',
-            line2: 'Cricle, Chruch Road, London'
-        },
-        gender: 'Male',
-        dob: '2000-01-20'
-
-    })
-
+        name: "",
+        email: "",
+        phone: "",
+        address: { line1: "", line2: "" },
+        gender: "",
+        dob: "",
+        image: ""
+    });
     const [isEdit, SetIsEdit] = useState(false)
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                const res = await axios.get("http://localhost:5000/api/user/profile", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                setUserData(res.data); // fill state with backend data
+            } catch (error) {
+                console.error(error.response?.data || error.message);
+            }
+        };
+        fetchProfile();
+    }, []);
+
+    const saveProfile = async () => {
+        try {
+            const token = localStorage.getItem("token"); // assume stored after login
+            const res = await axios.put(
+                "http://localhost:5000/api/user/profile",
+                userData,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            console.log(res.data);
+            SetIsEdit(false);
+        } catch (error) {
+            console.error(error.response?.data || error.message);
+        }
+    };
 
     return (
         <div className='max-w-lg flex flex-col gap-2 text-sm'>
-            <img className='w-36 rounded' src={userData.image} alt="" />
+            {console.log(userData.address)}
+            {
+                userData.image ? (
+                    <img className='w-36 rounded' src={userData.image} alt="" />
+                ) : null
+            }
             {
                 isEdit ? <input className='bg-gray-50 text-3xl font-medium max-w-60 mt-4' type="text" value={userData.name} onChange={e => setUserData(prev => ({ ...prev, name: e.target.value }))} /> : <p className='font-medium text-3x1 text-neutral-800 mt-4'>{userData.name}</p>
             }
-            <hr className='bg-zinc-400 h-[1px] border-none'/>
+            <hr className='bg-zinc-400 h-[1px] border-none' />
             <div>
                 <p className='text-neutral-500 underline mt-3'>CONTACT INFORMATION</p>
                 <div className='grid grid-cols-[1fr_3fr] gap-y-2.5 mt-3 text-neutral-700'>
@@ -36,14 +68,28 @@ const MyProfile = () => {
                     }
                     <p  >Address:</p>
                     {
-                        isEdit ? <p> <input className='bg-gray-50' type="text" onChange={e => setUserData(prev => ({ ...prev.address ,line1: e.target.value }))} />
+                        isEdit ? <p> <input className='bg-gray-50' type="text"
+                            value={userData.address?.line1 || ""}
+                            onChange={e =>
+                                setUserData(prev => ({
+                                    ...prev,
+                                    address: { ...prev.address, line1: e.target.value }
+                                }))
+                            } />
                             <br />
-                            <input className='bg-gray-50' type="text" onChange={e => setUserData(prev => ({ ...prev.address , line2: e.target.value }))} />
+                            <input className='bg-gray-50' type="text"
+                                value={userData.address?.line2 || ""}
+                                onChange={e =>
+                                    setUserData(prev => ({
+                                        ...prev,
+                                        address: { ...prev.address, line2: e.target.value }
+                                    }))
+                                } />
                         </p> :
                             <p className='text-gray-500'>
-                                {userData.address.line1}
+                                {userData.address.line1 || ""}
                                 <br />
-                                {userData.address.line2}
+                                {userData.address.line2 || ""}
                             </p>
                     }
                 </div>
@@ -61,15 +107,15 @@ const MyProfile = () => {
                     }
                     <p className='font-medium'>Birthday:</p>
                     {
-                        isEdit ? <input className='max-w-28 bg-gray-100' type="date" value={userData.dob} onChange={(e) => setUserData(prev => ({ ...prev, dob: e.target.value }))}/>
-                        : <p className='text-gray-400' >{userData.dob}</p>
+                        isEdit ? <input className='max-w-28 bg-gray-100' type="date" value={userData.dob} onChange={(e) => setUserData(prev => ({ ...prev, dob: e.target.value }))} />
+                            : <p className='text-gray-400' >{userData.dob}</p>
                     }
                 </div>
             </div>
             <div className='mt-10'>
                 {
-                    isEdit ? <button className='border border-primary px-8 py-2 rounded-full hover:bg-primary hover:text-white transition-all' onClick={()=>SetIsEdit(false)}>Save information</button>
-                    : <button className='border border-primary px-8 py-2 rounded-full hover:bg-primary hover:text-white transition-all' onClick={()=>SetIsEdit(true)}>Edit</button>
+                    isEdit ? <button onClick={saveProfile} className='border border-primary px-8 py-2 rounded-full hover:bg-primary hover:text-white transition-all' >Save information</button>
+                        : <button className='border border-primary px-8 py-2 rounded-full hover:bg-primary hover:text-white transition-all' onClick={() => SetIsEdit(true)}>Edit</button>
                 }
             </div>
 

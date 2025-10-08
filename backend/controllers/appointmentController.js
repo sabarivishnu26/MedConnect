@@ -41,3 +41,20 @@ export const getDoctorAppointmentsByDate = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+export const cancelAppointment = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+    console.log("Received request to cancel appointment with ID:", appointmentId);
+
+    const appointment = await Appointment.findByIdAndDelete(appointmentId);
+
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    res.json({ message: "Appointment cancelled successfully" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};

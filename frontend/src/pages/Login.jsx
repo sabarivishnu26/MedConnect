@@ -1,8 +1,11 @@
-
 import React, { useState } from 'react'
+import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
 
 const Login = () => {
-  const [state, setState] = useState('Sign Up')
+
+  const [state, setState] = useState('Login') // 'Login' or 'Sign Up'
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
@@ -27,7 +30,42 @@ const Login = () => {
 
   const onSubmitHandler = async (event) => {
     event.preventDefault()
+
+    try {
+      if (state === "Login") {
+        // 🔑 Login request
+        const res = await axios.post("http://localhost:5000/api/auth/login", {
+          email,
+          password,
+          role
+        })
+
+        // save token to localStorage
+        localStorage.setItem("token", res.data.token)
+        localStorage.setItem("role", role);
+        navigate("/") // redirect to home page
+        alert("Login successful!")
+
+      } else {
+        // 🆕 Signup request
+        const res = await axios.post("http://localhost:5000/api/auth/signup", {
+          name,
+          email,
+          password,
+          role
+        })
+        localStorage.setItem("token", true);
+        localStorage.setItem("role", role);
+
+        alert("Signup successful! Now login.")
+        setState("Login")
+      }
+    } catch (err) {
+      console.error(err.response?.data)
+      alert(err.response?.data?.message || "Something went wrong")
+    }
   }
+
 
   return (
     <form className='min-h-[80vh] flex items-center' onSubmit={onSubmitHandler}>
@@ -48,10 +86,10 @@ const Login = () => {
         {state === 'Sign Up' && (
           <div className='w-full'>
             <p>Full Name</p>
-            <input 
+            <input
               className='border border-zinc-300 rounded w-full p-2 mt-1'
               type="text"
-              onChange={(e)=>setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               value={name}
             />
           </div>
@@ -59,20 +97,20 @@ const Login = () => {
 
         <div className='w-full'>
           <p>Email</p>
-          <input 
+          <input
             className='border border-zinc-300 rounded w-full p-2 mt-1'
             type="email"
-            onChange={(e)=>setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             value={email}
           />
         </div>
 
         <div className='w-full'>
           <p>Password</p>
-          <input 
+          <input
             className='border border-zinc-300 rounded w-full p-2 mt-1'
             type="password"
-            onChange={(e)=>setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             value={password}
           />
         </div>
@@ -81,9 +119,9 @@ const Login = () => {
           {state === 'Sign Up' ? "Create Account" : "Login"}
         </button>
 
-        {state === 'Sign Up' 
-          ? <p>Already have an account? <span onClick={()=>setState('Login')} className='text-primary underline cursor-pointer'>Login here</span></p>
-          : <p>Create a new account? <span onClick={()=>setState('Sign Up')} className='text-primary underline cursor-pointer'>Click here</span></p>
+        {state === 'Sign Up'
+          ? <p>Already have an account? <span onClick={() => setState('Login')} className='text-primary underline cursor-pointer'>Login here</span></p>
+          : <p>Create a new account? <span onClick={() => setState('Sign Up')} className='text-primary underline cursor-pointer'>Click here</span></p>
         }
       </div>
     </form>

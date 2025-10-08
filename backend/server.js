@@ -8,14 +8,20 @@ import connectDB from './config/mongodb.js';
 import connectCloudinary from './config/cloudinary.js';
 //import doctorrouter from './routes/doctorRoute.js';
 import authRoutes from "./routes/authRoute.js";
-
+import userRoutes from "./routes/userRoute.js";
+import appointmentRoutes from "./routes/appointmentRoute.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 connectDB()
 connectCloudinary
 
-app.use(cors());
+app.use(cors(
+    {
+  origin: "http://localhost:5173", // your frontend URL
+  credentials: true
+}
+));
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -24,7 +30,8 @@ app.get('/', (req, res) => {
 
 //app.use('/api/doctor', doctorrouter);
 app.use("/api/auth", authRoutes);
-
+app.use("/api/user", userRoutes);
+app.use("/api/appointments", appointmentRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

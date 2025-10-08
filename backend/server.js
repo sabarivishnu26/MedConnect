@@ -8,7 +8,8 @@ import connectDB from './config/mongodb.js';
 import connectCloudinary from './config/cloudinary.js';
 //import doctorrouter from './routes/doctorRoute.js';
 import authRoutes from "./routes/authRoute.js";
-
+import appointmentRoute from "./routes/appointmentRoute.js";
+import doctorRoute from "./routes/doctorRoute.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -24,6 +25,8 @@ app.get('/', (req, res) => {
 
 //app.use('/api/doctor', doctorrouter);
 app.use("/api/auth", authRoutes);
+app.use("/api/appointments", appointmentRoute);
+app.use("/api/doctors", doctorRoute);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

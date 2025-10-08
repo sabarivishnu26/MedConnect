@@ -1,0 +1,6 @@
+medconnect:what did we use
+
+used cloudinary for stroring images(fast rekiable cloud)
+used atlas
+we have hashed password
+validating emails,etc

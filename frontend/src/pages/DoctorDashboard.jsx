@@ -1,29 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 // Helper to get Indian time
 const getIndianTime = () => {
   return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
 };
-
-// Generate fake appointments for any date
-const getFakeAppointments = (date) => [
-  {
-    id: 1,
-    user: { name: 'Sanjay Kumar', profilePic: 'https://randomuser.me/api/portraits/men/32.jpg' },
-    date,
-    time: '10:00',
-    reason: 'General Checkup',
-    status: 'pending'
-  },
-  {
-    id: 2,
-    user: { name: 'Priya Sharma', profilePic: 'https://randomuser.me/api/portraits/women/44.jpg' },
-    date,
-    time: '11:30',
-    reason: 'Consultation',
-    status: 'pending'
-  },
-];
 
 function DoctorDashboard() {
   // Calendar state
@@ -31,14 +12,46 @@ function DoctorDashboard() {
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [selectedDate, setSelectedDate] = useState(today.toISOString().slice(0, 10));
-  const [appointments, setAppointments] = useState(getFakeAppointments(selectedDate));
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Update appointments when date changes
+/*  // Get JWT token from localStorage (or context)
+  const token = localStorage.getItem("token");
+
+  // Fetch appointments from backend using token
   useEffect(() => {
-    setAppointments(getFakeAppointments(selectedDate));
-  }, [selectedDate]);
+    if (!token) return;
+    setLoading(true);
+    axios
+      .get(`/api/appointments/doctor/date/${selectedDate}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => setAppointments(res.data))
+      .catch(() => setAppointments([]))
+      .finally(() => setLoading(false));
+  }, [token, selectedDate]);  */
 
-  // Auto-complete appointments whose time has passed
+  // Replace this block in DoctorDashboard.jsx
+
+  const doctorId = "68dde81c67d0d3e662116b4d"; // e.g., "6526c8e2f1a2b3c4d5e6f7a8"
+
+  useEffect(() => {
+    setLoading(true);
+    axios
+      .get(`/api/appointments/doctor/${doctorId}/date/${selectedDate}`)
+      .then(res => {
+        // Defensive: ensure appointments is always an array
+        if (Array.isArray(res.data)) {
+          setAppointments(res.data);
+        } else {
+          setAppointments([]);
+        }
+      })
+      .catch(() => setAppointments([]))
+      .finally(() => setLoading(false));
+  }, [doctorId, selectedDate]);
+
+  // Auto-complete appointments whose time has passed (optional, backend should handle this ideally)
   useEffect(() => {
     const interval = setInterval(() => {
       const now = getIndianTime();
@@ -54,9 +67,9 @@ function DoctorDashboard() {
           return appt;
         })
       );
-    }, 60000); // check every minute
+    }, 60000);
     return () => clearInterval(interval);
-  }, [selectedDate]);
+  }, [appointments]);
 
   // Calendar helpers
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -65,9 +78,7 @@ function DoctorDashboard() {
   // Build calendar grid
   const calendarRows = [];
   let cells = [];
-  for (let i = 0; i < firstDay; i++) {
-    cells.push(null); // empty cells before 1st
-  }
+  for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     cells.push(d);
     if (cells.length === 7) {
@@ -80,24 +91,42 @@ function DoctorDashboard() {
     calendarRows.push(cells);
   }
 
-  // Accept appointment
-  const handleAccept = (id) => {
-    setAppointments((prev) =>
-      prev.map((appt) =>
-        appt.id === id ? { ...appt, status: 'scheduled' } : appt
-      )
-    );
+  // Accept appointment (should call backend PATCH/PUT in real app)
+  const handleAccept = async (id) => {
+    try {
+      await axios.patch(`/api/appointments/${id}/accept`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAppointments((prev) =>
+        prev.map((appt) =>
+          appt._id === id ? { ...appt, status: 'scheduled' } : appt
+        )
+      );
+    } catch (err) {
+      // handle error
+    }
   };
 
-  // Cancel appointment
-  const handleCancel = (id) => {
-    setAppointments((prev) => prev.filter((appt) => appt.id !== id));
+  // Cancel appointment (should call backend PATCH/PUT in real app)
+  const handleCancel = async (id) => {
+    try {
+      await axios.patch(`/api/appointments/${id}/reject`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAppointments((prev) =>
+        prev.map((appt) =>
+          appt._id === id ? { ...appt, status: 'rejected' } : appt
+        )
+      );
+    } catch (err) {
+      // handle error
+    }
   };
 
-  // Filter for schedule (accepted or completed)
-  const scheduledAppointments = appointments.filter(
-    (appt) => appt.status === 'scheduled' || appt.status === 'completed'
-  );
+  // Filter for schedule (accepted/scheduled/completed)
+  const scheduledAppointments = Array.isArray(appointments)
+  ? appointments.filter(appt => appt.status === 'scheduled' || appt.status === 'completed')
+  : [];
 
   return (
     <div className="max-w-2xl mx-auto mt-12">
@@ -172,7 +201,9 @@ function DoctorDashboard() {
       {/* All Appointments Table (with Accept/Cancel) */}
       <div>
         <p className="ph-3 font-medium text-zinc-700 border-b mb-4">Appointments for {selectedDate}</p>
-        {appointments.length === 0 ? (
+        {loading ? (
+          <p className="text-center text-zinc-500 py-8">Loading...</p>
+        ) : appointments.length === 0 ? (
           <p className="text-center text-zinc-500 py-8">No appointments for this date.</p>
         ) : (
           <table className="w-full border text-left">
@@ -190,21 +221,28 @@ function DoctorDashboard() {
                 .sort((a, b) => a.time.localeCompare(b.time))
                 .map((appt) => (
                   <tr
-                    key={appt.id}
-                    className={`border-b ${appt.status === 'completed' ? 'border-green-500' : ''}`}
+                    key={appt._id}
+                    className={`border-b ${
+                      appt.status === 'completed' ? 'border-green-500' :
+                      appt.status === 'rejected' ? 'border-red-500' : ''
+                    }`}
                   >
                     <td className="py-2 px-4 font-medium">{appt.time}</td>
                     <td className="py-2 px-4 flex items-center gap-3">
                       <img
-                        src={appt.user.profilePic}
-                        alt={appt.user.name}
+                        src={appt.user?.image || '/src/assets/profile_pic.png'}
+                        alt={appt.user?.name}
                         className="w-10 h-10 rounded-full bg-indigo-50 object-cover"
                       />
-                      <span className="font-semibold text-neutral-800">{appt.user.name}</span>
+                      <span className="font-semibold text-neutral-800">{appt.user?.name}</span>
                     </td>
                     <td className="py-2 px-4 text-zinc-600">{appt.reason}</td>
-                    <td className={`py-2 px-4 font-semibold ${appt.status === 'completed' ? 'text-green-600' : ''}`}>
-                      {appt.status === 'completed' ? 'Completed' : appt.status.charAt(0).toUpperCase() + appt.status.slice(1)}
+                    <td className={`py-2 px-4 font-semibold ${
+                      appt.status === 'completed' ? 'text-green-600' :
+                      appt.status === 'rejected' ? 'text-red-600' :
+                      appt.status === 'scheduled' ? 'text-blue-600' : ''
+                    }`}>
+                      {appt.status.charAt(0).toUpperCase() + appt.status.slice(1)}
                     </td>
                     <td className="py-2 px-4">
                       {appt.status === 'pending' && (
@@ -212,14 +250,14 @@ function DoctorDashboard() {
                           <button
                             className="bg-green-100 hover:bg-green-500 hover:text-white text-green-700 rounded-full p-2 transition-all"
                             title="Accept"
-                            onClick={() => handleAccept(appt.id)}
+                            onClick={() => handleAccept(appt._id)}
                           >
                             ✓
                           </button>
                           <button
                             className="bg-red-100 hover:bg-red-500 hover:text-white text-red-700 rounded-full p-2 transition-all"
                             title="Cancel"
-                            onClick={() => handleCancel(appt.id)}
+                            onClick={() => handleCancel(appt._id)}
                           >
                             ✗
                           </button>
@@ -253,17 +291,17 @@ function DoctorDashboard() {
                 .sort((a, b) => a.time.localeCompare(b.time))
                 .map((appt) => (
                   <tr
-                    key={appt.id}
+                    key={appt._id}
                     className={`border-b ${appt.status === 'completed' ? 'border-green-500' : ''}`}
                   >
                     <td className="py-2 px-4 font-medium">{appt.time}</td>
                     <td className="py-2 px-4 flex items-center gap-3">
                       <img
-                        src={appt.user.profilePic}
-                        alt={appt.user.name}
+                        src={appt.user?.image || '/src/assets/profile_pic.png'}
+                        alt={appt.user?.name}
                         className="w-10 h-10 rounded-full bg-indigo-50 object-cover"
                       />
-                      <span className="font-semibold text-neutral-800">{appt.user.name}</span>
+                      <span className="font-semibold text-neutral-800">{appt.user?.name}</span>
                     </td>
                     <td className="py-2 px-4 text-zinc-600">{appt.reason}</td>
                     <td className={`py-2 px-4 font-semibold ${appt.status === 'completed' ? 'text-green-600' : ''}`}>

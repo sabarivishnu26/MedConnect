@@ -1,26 +1,23 @@
-import React, { useState } from 'react';
-
-const initialDoctor = {
-  name: 'Dr. Ramesh Kumar',
-  email: 'ramesh.kumar@example.com',
-  password: '********',
-  specialization: 'Cardiology',
-  experience: 10,
-  fees: 500,
-  phone: '9876543210',
-  location: 'Chennai',
-  rating: 4.5,
-  profilePic: 'https://randomuser.me/api/portraits/men/45.jpg',
-  clinicPhoto: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
-  availability: [
-    { day: 'Monday', startTime: '09:00', endTime: '17:00' },
-    { day: 'Wednesday', startTime: '10:00', endTime: '16:00' },
-  ],
-};
+import React, { useState, useEffect } from "react";
 
 function DoctorProfile() {
-  const [doctor, setDoctor] = useState(initialDoctor);
+  const [doctor, setDoctor] = useState(null);
   const [editing, setEditing] = useState(false);
+
+  // Fetch doctor data from backend
+  useEffect(() => {
+    const fetchDoctor = async () => {
+      try {
+        // Replace this with a valid doctor ID from your DB
+        const res = await fetch("http://localhost:5000/api/doctors/68dde81c67d0d3e662116b4d");
+        const data = await res.json();
+        setDoctor(data);
+      } catch (error) {
+        console.error("Error fetching doctor:", error);
+      }
+    };
+    fetchDoctor();
+  }, []);
 
   const handleChange = (e) => {
     setDoctor({ ...doctor, [e.target.name]: e.target.value });
@@ -36,7 +33,10 @@ function DoctorProfile() {
   const handleAddAvailability = () => {
     setDoctor({
       ...doctor,
-      availability: [...doctor.availability, { day: '', startTime: '', endTime: '' }],
+      availability: [
+        ...doctor.availability,
+        { day: "", startTime: "", endTime: "" },
+      ],
     });
   };
 
@@ -47,32 +47,50 @@ function DoctorProfile() {
     });
   };
 
-  const handleSave = () => {
-    setEditing(false);
-    // Save to backend when available
+  const handleSave = async () => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/doctors/${doctor._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(doctor),
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to update profile");
+
+      const updatedDoctor = await res.json();
+      setDoctor(updatedDoctor);
+      setEditing(false);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
   };
+
+  if (!doctor) return <p className="text-center mt-10">Loading profile...</p>;
 
   return (
     <div className="max-w-2xl mx-auto mt-12 bg-white rounded shadow">
       {/* Banner and Profile Photo */}
       <div className="relative">
         <img
-          src={doctor.clinicPhoto}
+          src={doctor.clinicPhoto || "https://via.placeholder.com/800x200"}
           alt="Clinic"
           className="w-full h-48 object-cover rounded-t"
         />
         <div className="absolute left-6 -bottom-12 flex flex-col items-start">
           <div className="relative">
             <img
-              src={doctor.profilePic}
+              src={doctor.image}
               alt="Profile"
               className="w-32 h-32 rounded-full border-4 border-white object-cover shadow-lg"
             />
             {editing && (
               <input
                 type="text"
-                name="profilePic"
-                value={doctor.profilePic}
+                name="image"
+                value={doctor.image}
                 onChange={handleChange}
                 className="border px-2 py-1 rounded w-32 mt-2"
                 placeholder="Profile Pic URL"
@@ -85,7 +103,7 @@ function DoctorProfile() {
             <input
               type="text"
               name="clinicPhoto"
-              value={doctor.clinicPhoto}
+              value={doctor.clinicPhoto || ""}
               onChange={handleChange}
               className="border px-2 py-1 rounded w-64"
               placeholder="Clinic Photo URL"
@@ -93,6 +111,7 @@ function DoctorProfile() {
           </div>
         )}
       </div>
+
       {/* Profile Info Card */}
       <div className="pt-16 pl-6 pr-6 pb-6">
         <h2 className="text-2xl font-semibold mb-2">{doctor.name}</h2>
@@ -100,23 +119,55 @@ function DoctorProfile() {
           <div>
             <label className="block text-gray-700">Email:</label>
             {editing ? (
-              <input type="email" name="email" value={doctor.email} onChange={handleChange} className="border px-2 py-1 rounded w-full" />
+              <input
+                type="email"
+                name="email"
+                value={doctor.email}
+                onChange={handleChange}
+                className="border px-2 py-1 rounded w-full"
+              />
             ) : (
               <p>{doctor.email}</p>
             )}
           </div>
           <div>
-            <label className="block text-gray-700">Specialization:</label>
+            <label className="block text-gray-700">Speciality:</label>
             {editing ? (
-              <input type="text" name="specialization" value={doctor.specialization} onChange={handleChange} className="border px-2 py-1 rounded w-full" />
+              <input
+                type="text"
+                name="speciality"
+                value={doctor.speciality}
+                onChange={handleChange}
+                className="border px-2 py-1 rounded w-full"
+              />
             ) : (
-              <p>{doctor.specialization}</p>
+              <p>{doctor.speciality}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-gray-700">Degree:</label>
+            {editing ? (
+              <input
+                type="text"
+                name="degree"
+                value={doctor.degree}
+                onChange={handleChange}
+                className="border px-2 py-1 rounded w-full"
+              />
+            ) : (
+              <p>{doctor.degree}</p>
             )}
           </div>
           <div>
             <label className="block text-gray-700">Experience (years):</label>
             {editing ? (
-              <input type="number" name="experience" value={doctor.experience} onChange={handleChange} className="border px-2 py-1 rounded w-full" />
+              <input
+                type="text"
+                name="experience"
+                value={doctor.experience}
+                onChange={handleChange}
+                className="border px-2 py-1 rounded w-full"
+              />
             ) : (
               <p>{doctor.experience}</p>
             )}
@@ -124,25 +175,29 @@ function DoctorProfile() {
           <div>
             <label className="block text-gray-700">Fees (₹):</label>
             {editing ? (
-              <input type="number" name="fees" value={doctor.fees} onChange={handleChange} className="border px-2 py-1 rounded w-full" />
+              <input
+                type="number"
+                name="fees"
+                value={doctor.fees}
+                onChange={handleChange}
+                className="border px-2 py-1 rounded w-full"
+              />
             ) : (
               <p>{doctor.fees}</p>
             )}
           </div>
           <div>
-            <label className="block text-gray-700">Phone:</label>
+            <label className="block text-gray-700">Address:</label>
             {editing ? (
-              <input type="text" name="phone" value={doctor.phone} onChange={handleChange} className="border px-2 py-1 rounded w-full" />
+              <input
+                type="text"
+                name="address"
+                value={doctor.address}
+                onChange={handleChange}
+                className="border px-2 py-1 rounded w-full"
+              />
             ) : (
-              <p>{doctor.phone}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-gray-700">Location:</label>
-            {editing ? (
-              <input type="text" name="location" value={doctor.location} onChange={handleChange} className="border px-2 py-1 rounded w-full" />
-            ) : (
-              <p>{doctor.location}</p>
+              <p>{doctor.address}</p>
             )}
           </div>
           <div>
@@ -159,30 +214,54 @@ function DoctorProfile() {
                       type="text"
                       placeholder="Day"
                       value={slot.day}
-                      onChange={e => handleAvailabilityChange(idx, 'day', e.target.value)}
+                      onChange={(e) =>
+                        handleAvailabilityChange(idx, "day", e.target.value)
+                      }
                       className="border px-2 py-1 rounded w-1/3"
                     />
                     <input
                       type="time"
                       value={slot.startTime}
-                      onChange={e => handleAvailabilityChange(idx, 'startTime', e.target.value)}
+                      onChange={(e) =>
+                        handleAvailabilityChange(
+                          idx,
+                          "startTime",
+                          e.target.value
+                        )
+                      }
                       className="border px-2 py-1 rounded w-1/4"
                     />
                     <input
                       type="time"
                       value={slot.endTime}
-                      onChange={e => handleAvailabilityChange(idx, 'endTime', e.target.value)}
+                      onChange={(e) =>
+                        handleAvailabilityChange(idx, "endTime", e.target.value)
+                      }
                       className="border px-2 py-1 rounded w-1/4"
                     />
-                    <button type="button" onClick={() => handleRemoveAvailability(idx)} className="text-red-500 px-2">✗</button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAvailability(idx)}
+                      className="text-red-500 px-2"
+                    >
+                      ✗
+                    </button>
                   </div>
                 ))}
-                <button type="button" onClick={handleAddAvailability} className="bg-indigo-100 px-3 py-1 rounded mt-2">Add Slot</button>
+                <button
+                  type="button"
+                  onClick={handleAddAvailability}
+                  className="bg-indigo-100 px-3 py-1 rounded mt-2"
+                >
+                  Add Slot
+                </button>
               </div>
             ) : (
               <ul className="list-disc ml-6">
                 {doctor.availability.map((slot, idx) => (
-                  <li key={idx}>{slot.day}: {slot.startTime} - {slot.endTime}</li>
+                  <li key={idx}>
+                    {slot.day}: {slot.startTime} - {slot.endTime}
+                  </li>
                 ))}
               </ul>
             )}
@@ -190,9 +269,21 @@ function DoctorProfile() {
         </form>
         <div className="mt-6 flex justify-start">
           {editing ? (
-            <button type="button" className="bg-green-500 text-white px-4 py-2 rounded" onClick={handleSave}>Save</button>
+            <button
+              type="button"
+              className="bg-green-500 text-white px-4 py-2 rounded"
+              onClick={handleSave}
+            >
+              Save
+            </button>
           ) : (
-            <button type="button" className="bg-primary text-white px-4 py-2 rounded" onClick={() => setEditing(true)}>Edit Profile</button>
+            <button
+              type="button"
+              className="bg-primary text-white px-4 py-2 rounded"
+              onClick={() => setEditing(true)}
+            >
+              Edit Profile
+            </button>
           )}
         </div>
       </div>

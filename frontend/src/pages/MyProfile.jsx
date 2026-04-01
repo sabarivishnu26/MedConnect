@@ -19,7 +19,7 @@ const MyProfile = () => {
         const fetchProfile = async () => {
             try {
                 const token = localStorage.getItem("token");
-                const res = await axios.get("http://localhost:5000/api/user/profile", {
+                const res = await axios.get("http://localhost:4000/api/user/profile", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setUserData(res.data); // fill state with backend data
@@ -34,7 +34,7 @@ const MyProfile = () => {
         try {
             const token = localStorage.getItem("token"); // assume stored after login
             const res = await axios.put(
-                "http://localhost:5000/api/user/profile",
+                "http://localhost:4000/api/user/profile",
                 userData,
                 { headers: { Authorization: `Bearer ${token}` } }
             );

@@ -2,9 +2,20 @@ import Appointment from "../models/appointmentModel.js";
 
 export const bookAppointment = async (req, res) => {
   try {
-    const { user, doctor, date, time, reason } = req.body;
-    const appointment = await Appointment.create({ user, doctor, date, time, reason });
+    const userId = req.user.id; // ✅ from token
+
+    const { doctor, date, time, reason } = req.body;
+
+    const appointment = await Appointment.create({
+      user: userId,
+      doctor,
+      date,
+      time,
+      reason
+    });
+
     res.status(201).json(appointment);
+
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -32,9 +43,9 @@ export const getUserAppointments = async (req, res) => {
 
 export const getDoctorAppointmentsByDate = async (req, res) => {
   try {
-   // const doctorId = req.doctor._id;    //use atlast
-    
-    const { doctorId,date } = req.params;
+    // const doctorId = req.doctor._id;    //use atlast
+
+    const { doctorId, date } = req.params;
     const appointments = await Appointment.find({ doctor: doctorId, date }).populate("user");
     res.json(appointments);
   } catch (err) {

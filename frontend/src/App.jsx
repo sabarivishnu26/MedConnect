@@ -25,15 +25,16 @@ const App = () => {
 
       <Navbar />
       <Routes>
-        <Route path='/' element={<Home/>}/> 
-        <Route path='/doctors' element={<Doctors/>}/>
-        <Route path='/doctors/:speciality' element={<Doctors/>}/>
-        <Route path='/login' element={<Login/>}/>
-        <Route path='/about' element={<About/>}/>
-        <Route path='/contact' element={<Contact/>}/>
-        <Route path='/myprofile' element={<MyProfile/>}/>
-        <Route path='/myappointments' element={<MyAppointments/>}/>
-        <Route path='/appointment/:docId' element={<Appointment/>}/>
+        <Route path='/' element={<Home />} />
+        <Route path='/doctors' element={<Doctors />} />
+        <Route path='/doctors/:speciality' element={<Doctors />} />
+        <Route path='/login' element={<Login />} />
+        <Route path='/signup' element={<Login />} />
+        <Route path='/about' element={<About />} />
+        <Route path='/contact' element={<Contact />} />
+        <Route path='/myprofile' element={<MyProfile />} />
+        <Route path='/myappointments' element={<MyAppointments />} />
+        <Route path='/appointment/:docId' element={<Appointment />} />
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
         <Route path="/doctor/profile" element={<DoctorProfile />} />
 

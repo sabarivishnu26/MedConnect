@@ -18,7 +18,7 @@ function MyAppointments() {
       const userId = decoded.id || decoded._id;
 
       const res = await axios.get(
-        `http://localhost:5000/api/appointments/user/${userId}`,
+        `http://localhost:4000/api/appointments/user/${userId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -47,7 +47,7 @@ function MyAppointments() {
 
     try {
       await axios.delete(
-        `http://localhost:5000/api/appointments/cancel/${appointmentId}`,
+        `http://localhost:4000/api/appointments/cancel/${appointmentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Appointment cancelled");

@@ -9,7 +9,7 @@ function DoctorProfile() {
     const fetchDoctor = async () => {
       try {
         // Replace this with a valid doctor ID from your DB
-        const res = await fetch("http://localhost:5000/api/doctors/68dde81c67d0d3e662116b4d");
+        const res = await fetch("http://localhost:4000/api/doctors/68dde81c67d0d3e662116b4d");
         const data = await res.json();
         setDoctor(data);
       } catch (error) {
@@ -50,7 +50,7 @@ function DoctorProfile() {
   const handleSave = async () => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/doctors/${doctor._id}`,
+        `http://localhost:4000/api/doctors/${doctor._id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

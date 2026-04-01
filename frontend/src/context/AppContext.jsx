@@ -1,13 +1,28 @@
-import { createContext } from "react";
-import { doctors } from "../assets/assets";
+import { createContext, useEffect, useState } from "react";
+import axios from "axios";
 
-export const AppContext = createContext()
+export const AppContext = createContext();
 
-const AppContextProvider =(props) =>{
+const AppContextProvider = (props) => {
 
-    const currencySymbol ='$'
+    const currencySymbol = '$'
+    const [doctors, setDoctors] = useState([])
 
-    const value ={
+    useEffect(() => {
+        const fetchDoctors = async () => {
+            try {
+                const res = await axios.get("http://localhost:4000/api/doctors")
+                console.log("Doctors from backend:", res.data) // ✅ DEBUG
+                setDoctors(res.data)
+            } catch (err) {
+                console.error(err)
+            }
+        }
+
+        fetchDoctors()
+    }, [])
+
+    const value = {
         doctors,
         currencySymbol
     }

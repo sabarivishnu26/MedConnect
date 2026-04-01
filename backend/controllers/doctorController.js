@@ -51,3 +51,12 @@ export const updateDoctorProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getAllDoctors = async (req, res) => {
+  try {
+    const doctors = await doctorModel.find();
+    res.json(doctors);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

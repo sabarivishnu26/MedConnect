@@ -1,8 +1,19 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom';
+
 
 const Login = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname === "/signup") {
+      setState("Sign Up");
+    } else {
+      setState("Login");
+    }
+  }, [location.pathname]);
 
   const [state, setState] = useState('Login') // 'Login' or 'Sign Up'
   const navigate = useNavigate()
@@ -34,7 +45,7 @@ const Login = () => {
     try {
       if (state === "Login") {
         // 🔑 Login request
-        const res = await axios.post("http://localhost:5000/api/auth/login", {
+        const res = await axios.post("http://localhost:4000/api/auth/login", {
           email,
           password,
           role
@@ -48,7 +59,7 @@ const Login = () => {
 
       } else {
         // 🆕 Signup request
-        const res = await axios.post("http://localhost:5000/api/auth/signup", {
+        const res = await axios.post("http://localhost:4000/api/auth/signup", {
           name,
           email,
           password,
@@ -120,8 +131,8 @@ const Login = () => {
         </button>
 
         {state === 'Sign Up'
-          ? <p>Already have an account? <span onClick={() => setState('Login')} className='text-primary underline cursor-pointer'>Login here</span></p>
-          : <p>Create a new account? <span onClick={() => setState('Sign Up')} className='text-primary underline cursor-pointer'>Click here</span></p>
+          ? <p>Already have an account? <span onClick={() => setState('/login')} className='text-primary underline cursor-pointer'>Login here</span></p>
+          : <p>Create a new account? <span onClick={() => setState('/signup')} className='text-primary underline cursor-pointer'>Click here</span></p>
         }
       </div>
     </form>

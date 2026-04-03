@@ -7,6 +7,11 @@ export const authDoctor = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded?.role && decoded.role !== "doctor") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     const doctor = await Doctor.findById(decoded.id);
     if (!doctor) return res.status(401).json({ error: "Doctor not found" });
     req.doctor = doctor;

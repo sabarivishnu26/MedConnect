@@ -1,17 +1,78 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import axios from "axios"
+import { api } from "../lib/api"
 import { AppContext } from '../context/AppContext'
 import RelatedDoctors from '../components/RelatedDoctors'
 import { assets } from '../assets/assets'
+
+const DEFAULT_IMAGE_URL =
+  "https://img.freepik.com/premium-vector/vector-flat-illustration-grayscale-avatar-user-profile-person-icon-gender-neutral-silhouette-profile-picture-suitable-social-media-profiles-icons-screensavers-as-templatex9xa_719432-2210.jpg?semt=ais_incoming&w=740&q=80";
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+const timeToMinutes = (hhmm) => {
+  if (typeof hhmm !== "string") return null
+  const m = hhmm.trim().match(/^([0-1]?\d|2[0-3]):([0-5]\d)$/)
+  if (!m) return null
+  return Number(m[1]) * 60 + Number(m[2])
+}
+
+const minutesToHHmm = (minutes) => {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+const formatDateYYYYMMDDLocal = (dateObj) => {
+  const y = dateObj.getFullYear()
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const d = String(dateObj.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+const getAllowedTimesForDate = (doctor, dateObj) => {
+  const dayName = DAY_NAMES[dateObj.getDay()]
+  const availability = Array.isArray(doctor?.availability) ? doctor.availability : []
+
+  const blocks = availability.filter((slot) =>
+    typeof slot?.day === 'string'
+    && slot.day.trim().toLowerCase() === dayName.toLowerCase()
+  )
+
+  const allowed = new Set()
+  for (const block of blocks) {
+    const startMin = timeToMinutes(block?.startTime)
+    const endMin = timeToMinutes(block?.endTime)
+    if (startMin == null || endMin == null) continue
+    if (endMin <= startMin) continue
+
+    for (let t = startMin; t + 30 <= endMin; t += 30) {
+      allowed.add(minutesToHHmm(t))
+    }
+  }
+
+  let times = Array.from(allowed).sort()
+
+  // Don't show past slots for today (best-effort, local time).
+  const now = new Date()
+  const isToday = now.toDateString() === dateObj.toDateString()
+  if (isToday) {
+    const nowMinRaw = now.getHours() * 60 + now.getMinutes()
+    const nowRoundedUp = Math.ceil(nowMinRaw / 30) * 30
+    times = times.filter((t) => {
+      const m = timeToMinutes(t)
+      return m != null && m >= nowRoundedUp
+    })
+  }
+
+  return times
+}
 
 const Appointment = () => {
 
   const { docId } = useParams()
   const navigate = useNavigate()
   const { doctors, currencySymbol } = useContext(AppContext)
-
-  const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
   const [docInfo, setDocInfo] = useState(null)
   const [docSlots, setDocSlots] = useState([])
@@ -26,46 +87,42 @@ const Appointment = () => {
     }
   }, [doctors, docId])
 
-  // ✅ SLOTS
+  // ✅ SLOTS (availability-driven)
   useEffect(() => {
     if (!docInfo) return
 
-    let today = new Date()
-    let allSlots = []
+    const today = new Date()
+    const allDays = []
 
     for (let i = 0; i < 7; i++) {
-      let currentDate = new Date(today)
-      currentDate.setDate(today.getDate() + i)
+      const dateObj = new Date(today)
+      dateObj.setHours(0, 0, 0, 0)
+      dateObj.setDate(today.getDate() + i)
 
-      let endTime = new Date(currentDate)
-      endTime.setHours(21, 0, 0, 0)
+      const dateStr = formatDateYYYYMMDDLocal(dateObj)
+      const allowedTimes = getAllowedTimesForDate(docInfo, dateObj)
 
-      if (today.getDate() === currentDate.getDate()) {
-        currentDate.setHours(currentDate.getHours() > 10 ? currentDate.getHours() + 1 : 10)
-        currentDate.setMinutes(currentDate.getMinutes() > 30 ? 30 : 0)
-      } else {
-        currentDate.setHours(10)
-        currentDate.setMinutes(0)
-      }
+      const bookedForDate = docInfo?.slots_booked?.[dateStr]
+      const bookedSet = new Set(Array.isArray(bookedForDate) ? bookedForDate : [])
 
-      let timeSlots = []
+      const slots = allowedTimes.map((t) => ({
+        time: t,
+        isBooked: bookedSet.has(t),
+      }))
 
-      while (currentDate < endTime) {
-        timeSlots.push({
-          datetime: new Date(currentDate),
-          time: currentDate.toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit'
-          })
-        })
-        currentDate.setMinutes(currentDate.getMinutes() + 30)
-      }
-
-      allSlots.push(timeSlots)
+      allDays.push({
+        dateObj,
+        dateStr,
+        dayName: DAY_NAMES[dateObj.getDay()],
+        slots,
+      })
     }
 
-    setDocSlots(allSlots)
+    setDocSlots(allDays)
+    setSlotTime("")
 
+    const firstWithSlots = allDays.findIndex((d) => d.slots.length > 0)
+    setSlotIndex(firstWithSlots >= 0 ? firstWithSlots : 0)
   }, [docInfo])
 
   // ✅ BOOK
@@ -84,13 +141,17 @@ const Appointment = () => {
     }
 
     try {
-      const selectedDay = docSlots[slotIndex][0].datetime
-      const date = selectedDay.toISOString().slice(0, 10)
+      const selected = docSlots[slotIndex]
+      const date = selected?.dateStr
+      if (!date) {
+        alert("Select a valid day")
+        return
+      }
 
-      await axios.post(
-        "http://localhost:4000/api/appointments/book",
+      await api.post(
+        "/api/appointments/book",
         {
-          doctor: docInfo._id,
+          doctorId: docInfo._id,
           date,
           time: slotTime,
           reason: "General consultation"
@@ -120,7 +181,7 @@ const Appointment = () => {
       {/* DOCTOR INFO */}
       <div className='flex flex-col sm:flex-row gap-4'>
         <img className='bg-primary w-full sm:max-w-72 rounded-lg'
-          src={docInfo.image || "/default-doctor.png"} alt="" />
+          src={(typeof docInfo.profilePic === "string" && docInfo.profilePic.trim()) ? docInfo.profilePic : DEFAULT_IMAGE_URL} alt="" />
 
         <div className='flex-1 border rounded-lg p-8 bg-white'>
           <p className='text-2xl font-medium'>
@@ -144,22 +205,35 @@ const Appointment = () => {
         <div className='flex gap-3 mt-4 overflow-x-scroll'>
           {docSlots.map((item, index) => (
             <div key={index}
-              onClick={() => setSlotIndex(index)}
-              className={`p-3 rounded cursor-pointer ${slotIndex === index ? 'bg-primary text-white' : 'border'}`}>
-              <p>{item[0] && daysOfWeek[item[0].datetime.getDay()]}</p>
-              <p>{item[0] && item[0].datetime.getDate()}</p>
+              onClick={() => {
+                if (item.slots.length === 0) return
+                setSlotIndex(index)
+                setSlotTime("")
+              }}
+              className={`p-3 rounded ${item.slots.length === 0 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'cursor-pointer'} ${slotIndex === index ? 'bg-primary text-white' : 'border'}`}>
+              <p>{item.dayName.slice(0, 3).toUpperCase()}</p>
+              <p>{item.dateObj.getDate()}</p>
             </div>
           ))}
         </div>
 
         <div className='flex gap-3 mt-4 overflow-x-scroll'>
-          {docSlots[slotIndex]?.map((item, index) => (
-            <p key={index}
-              onClick={() => setSlotTime(item.time)}
-              className={`px-4 py-2 rounded cursor-pointer ${item.time === slotTime ? 'bg-primary text-white' : 'border'}`}>
-              {item.time}
-            </p>
-          ))}
+          {docSlots[slotIndex]?.slots?.length === 0 ? (
+            <p className='text-sm text-gray-500'>No slots available for this day.</p>
+          ) : (
+            docSlots[slotIndex]?.slots?.map((item, index) => (
+              <p
+                key={index}
+                onClick={() => {
+                  if (item.isBooked) return
+                  setSlotTime(item.time)
+                }}
+                className={`px-4 py-2 rounded ${item.isBooked ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'cursor-pointer border'} ${item.time === slotTime ? 'bg-primary text-white' : ''}`}
+              >
+                {item.time}
+              </p>
+            ))
+          )}
         </div>
 
         <button

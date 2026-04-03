@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import axios from 'axios'
+import { api } from "../lib/api";
 import { jwtDecode } from 'jwt-decode'
 
 // ✅ Get Indian Time
@@ -17,9 +17,43 @@ function DoctorDashboard() {
   const [appointments, setAppointments] = useState([])
   const [loading, setLoading] = useState(false)
 
+  const renderStatusStamp = (status) => {
+    switch (status) {
+      case "accepted":
+        return (
+          <div className="border-2 border-green-500 text-green-500 bg-transparent px-3 py-1 text-xs font-bold tracking-widest uppercase -rotate-12">
+            ACCEPTED
+          </div>
+        )
+      case "rejected":
+        return (
+          <div className="border-2 border-red-500 bg-red-200 text-red-600 px-3 py-1 text-xs font-bold tracking-widest uppercase -rotate-12">
+            REJECTED
+          </div>
+        )
+      case "cancelled":
+        return (
+          <div className="border border-gray-400 text-gray-600 bg-transparent px-3 py-1 text-xs font-bold tracking-widest uppercase -rotate-6">
+            CANCELLED
+          </div>
+        )
+      default:
+        return null
+    }
+  }
+
   // ✅ TOKEN + DOCTOR ID
   const token = localStorage.getItem("token")
-  const decoded = token ? jwtDecode(token) : null
+  let decoded = null
+  if (token) {
+    try {
+      decoded = jwtDecode(token)
+    } catch {
+      localStorage.removeItem("token")
+      localStorage.removeItem("role")
+      decoded = null
+    }
+  }
   const doctorId = decoded?.id
 
   // ✅ FETCH APPOINTMENTS
@@ -28,11 +62,9 @@ function DoctorDashboard() {
 
     try {
       setLoading(true)
-      const res = await axios.get(
-        `http://localhost:5000/api/appointments/doctor/${doctorId}/date/${selectedDate}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+      const res = await api.get(
+        `/api/appointments/doctor/${doctorId}/date/${selectedDate}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       )
 
       setAppointments(Array.isArray(res.data) ? res.data : [])
@@ -48,33 +80,11 @@ function DoctorDashboard() {
     fetchAppointments()
   }, [doctorId, selectedDate])
 
-  // ✅ AUTO COMPLETE (FIXED)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = getIndianTime()
-
-      setAppointments(prev =>
-        prev.map(appt => {
-          if (
-            appt.status === 'accepted' &&
-            appt.date === now.toISOString().slice(0, 10) &&
-            now >= new Date(`${appt.date}T${appt.time}:00+05:30`)
-          ) {
-            return { ...appt, status: 'completed' }
-          }
-          return appt
-        })
-      )
-    }, 60000)
-
-    return () => clearInterval(interval)
-  }, [])
-
   // ✅ ACCEPT
   const handleAccept = async (id) => {
     try {
-      await axios.patch(
-        `http://localhost:5000/api/appointments/${id}/accept`,
+      await api.patch(
+        `/api/appointments/${id}/accept`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -85,11 +95,11 @@ function DoctorDashboard() {
     }
   }
 
-  // ✅ CANCEL
-  const handleCancel = async (id) => {
+  // ✅ REJECT
+  const handleReject = async (id) => {
     try {
-      await axios.patch(
-        `http://localhost:5000/api/appointments/${id}/reject`,
+      await api.patch(
+        `/api/appointments/${id}/reject`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -102,7 +112,7 @@ function DoctorDashboard() {
 
   // ✅ FILTER
   const scheduledAppointments = appointments.filter(
-    appt => appt.status === 'accepted' || appt.status === 'completed'
+    appt => appt.status === 'accepted'
   )
 
   // ✅ CALENDAR LOGIC
@@ -183,7 +193,11 @@ function DoctorDashboard() {
           <p>No appointments</p>
         ) : (
           appointments.map(appt => (
-            <div key={appt._id} className="border p-3 mb-2 flex justify-between">
+            <div key={appt._id} className="relative border p-3 mb-2 flex justify-between">
+
+              <div className="absolute top-2 right-2">
+                {renderStatusStamp(appt.status)}
+              </div>
 
               <div>
                 <p>{appt.time}</p>
@@ -195,7 +209,7 @@ function DoctorDashboard() {
               {appt.status === 'pending' && (
                 <div className="flex gap-2">
                   <button onClick={() => handleAccept(appt._id)}>Accept</button>
-                  <button onClick={() => handleCancel(appt._id)}>Reject</button>
+                  <button onClick={() => handleReject(appt._id)}>Reject</button>
                 </div>
               )}
 

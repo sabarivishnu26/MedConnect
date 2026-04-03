@@ -1,21 +1,13 @@
-import React, { useState, useEffect } from 'react'
-import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
-import { useLocation } from 'react-router-dom';
+import React, { useMemo, useState } from 'react'
+import { api } from "../lib/api";
+import { useNavigate, useLocation } from 'react-router-dom'
 
 
 const Login = () => {
   const location = useLocation();
 
-  useEffect(() => {
-    if (location.pathname === "/signup") {
-      setState("Sign Up");
-    } else {
-      setState("Login");
-    }
-  }, [location.pathname]);
+  const isSignup = useMemo(() => location.pathname === "/signup", [location.pathname])
 
-  const [state, setState] = useState('Login') // 'Login' or 'Sign Up'
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -27,7 +19,7 @@ const Login = () => {
   }
 
   const getDescriptionText = () => {
-    if (state === 'Sign Up') {
+    if (isSignup) {
       return role === 'user'
         ? 'Please sign up to book appointments'
         : 'Please sign up to manage your appointments'
@@ -38,42 +30,51 @@ const Login = () => {
     }
   }
 
+  const persistAuth = ({ token, role: persistedRole }) => {
+    localStorage.setItem("token", token)
+    localStorage.setItem("role", persistedRole)
+  }
+
 
   const onSubmitHandler = async (event) => {
     event.preventDefault()
 
     try {
-      if (state === "Login") {
-        // 🔑 Login request
-        const res = await axios.post("http://localhost:4000/api/auth/login", {
-          email,
-          password,
-          role
-        })
+      if (!email || !password || (isSignup && !name)) {
+        alert("Please fill all required fields")
+        return
+      }
 
-        // save token to localStorage
-        localStorage.setItem("token", res.data.token)
-        localStorage.setItem("role", role);
-        navigate("/") // redirect to home page
-        alert("Login successful!")
+      if (isSignup) {
+        // 🆕 Signup request (backend currently returns only a message)
+        await api.post("/api/auth/signup", { name, email, password, role })
 
+        // Auto-login immediately so we always store a real JWT
+        const loginRes = await api.post("/api/auth/login", { email, password, role })
+        if (!loginRes.data?.token) throw new Error("Login did not return a token")
+
+        persistAuth({ token: loginRes.data.token, role })
+        alert("Signup successful!")
+        navigate("/")
+        return
+      }
+
+      // 🔑 Login request
+      const res = await api.post("/api/auth/login", { email, password, role })
+      if (!res.data?.token) throw new Error("Login did not return a token")
+
+      persistAuth({ token: res.data.token, role })
+      alert("Login successful!")
+
+      if (role === "doctor") {
+        const isProfileComplete = Boolean(res.data?.account?.isProfileComplete)
+        navigate(isProfileComplete ? "/doctor/dashboard" : "/doctor/onboarding")
       } else {
-        // 🆕 Signup request
-        const res = await axios.post("http://localhost:4000/api/auth/signup", {
-          name,
-          email,
-          password,
-          role
-        })
-        localStorage.setItem("token", true);
-        localStorage.setItem("role", role);
-
-        alert("Signup successful! Now login.")
-        setState("Login")
+        navigate("/") // redirect to home page
       }
     } catch (err) {
-      console.error(err.response?.data)
-      alert(err.response?.data?.message || "Something went wrong")
+      console.error(err?.response?.data || err)
+      alert(err?.response?.data?.message || err?.message || "Something went wrong")
     }
   }
 
@@ -81,7 +82,7 @@ const Login = () => {
   return (
     <form className='min-h-[80vh] flex items-center' onSubmit={onSubmitHandler}>
       <div className='flex flex-col gap-3 m-auto items-start p-8 min-w-[340px] sm:min-w-96 border text-zinc-600 text-sm shadow-lg'>
-        <p className='text-2xl font-semibold'>{state === 'Sign Up' ? "Create Account" : "Login"}</p>
+        <p className='text-2xl font-semibold'>{isSignup ? "Create Account" : "Login"}</p>
         <p>{getDescriptionText()}</p>
 
         {/* Role Toggle */}
@@ -94,7 +95,7 @@ const Login = () => {
           </p>
         </div>
 
-        {state === 'Sign Up' && (
+        {isSignup && (
           <div className='w-full'>
             <p>Full Name</p>
             <input
@@ -127,13 +128,24 @@ const Login = () => {
         </div>
 
         <button className='bg-primary text-white w-full py-2 rounded-md text-base'>
-          {state === 'Sign Up' ? "Create Account" : "Login"}
+          {isSignup ? "Create Account" : "Login"}
         </button>
 
-        {state === 'Sign Up'
-          ? <p>Already have an account? <span onClick={() => setState('/login')} className='text-primary underline cursor-pointer'>Login here</span></p>
-          : <p>Create a new account? <span onClick={() => setState('/signup')} className='text-primary underline cursor-pointer'>Click here</span></p>
-        }
+        {isSignup ? (
+          <p>
+            Already have an account?{" "}
+            <span onClick={() => navigate('/login')} className='text-primary underline cursor-pointer'>
+              Login here
+            </span>
+          </p>
+        ) : (
+          <p>
+            Create a new account?{" "}
+            <span onClick={() => navigate('/signup')} className='text-primary underline cursor-pointer'>
+              Click here
+            </span>
+          </p>
+        )}
       </div>
     </form>
 

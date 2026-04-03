@@ -11,14 +11,30 @@ doctorrouter.post('/doctor-register', upload.single('image'), registerDoctor);
 export default doctorrouter;*/
 
 import express from "express";
-import { getDoctorProfile, updateDoctorProfile, getAllDoctors } from "../controllers/doctorController.js";
+import { getDoctorProfile, updateDoctorProfile, getAllDoctors, getMyDoctorProfile, updateMyDoctorProfile } from "../controllers/doctorController.js";
+import { authDoctor } from "../middlewares/authDoctor.js";
+import { doctorImagesUpload } from "../middlewares/doctorImageUpload.js";
 
 const router = express.Router();
+
+// Authenticated doctor (no hardcoded IDs)
+router.get("/me", authDoctor, getMyDoctorProfile);
+router.put(
+	"/me",
+	authDoctor,
+	(req, res, next) => {
+		doctorImagesUpload(req, res, (err) => {
+			if (err) return res.status(400).json({ message: err.message });
+			next();
+		});
+	},
+	updateMyDoctorProfile
+);
 
 // Fetch doctor profile
 router.get("/:id", getDoctorProfile);
 router.get("/", getAllDoctors);
 // Update doctor profile
-router.put("/:id", updateDoctorProfile);
+router.put("/:id", authDoctor, updateDoctorProfile);
 
 export default router;

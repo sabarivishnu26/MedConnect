@@ -1,18 +1,23 @@
 import mongoose from "mongoose";
 
+const DEFAULT_IMAGE_URL =
+  "https://img.freepik.com/premium-vector/vector-flat-illustration-grayscale-avatar-user-profile-person-icon-gender-neutral-silhouette-profile-picture-suitable-social-media-profiles-icons-screensavers-as-templatex9xa_719432-2210.jpg?semt=ais_incoming&w=740&q=80";
+
 const doctorSchema = new mongoose.Schema({
 
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  image: {type: String, default:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAADwCAYAAAA+VemSAAAACXBIWXMAABCcAAAQnAEmzTo0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAA5uSURBVHgB7d0JchvHFcbxN+C+iaQolmzFsaWqHMA5QXID+wZJTmDnBLZu4BvER4hvYJ/AvoHlimPZRUngvoAg4PkwGJOiuGCd6df9/1UhoJZYJIBvXndPL5ndofljd8NW7bP8y79bZk+tmz8ATFdmu3nWfuiYfdNo2383389e3P5Xb9B82X1qs/YfU3AB1Cuzr+3cnt8U5Mb132i+7n5mc/a9EV4gDF37Z15Qv3/9a/fz63/0VgXOw/uFdexLAxCqLze3s+flL/4IcK/yduwrAxC0zoX9e+u9rJfVXoB7fV41m7u2YQBCt2tt+6v6xEUfeM6+ILyAGxv9QWbL+iPOPxoAX2Zts9GZtU8NgDudln3eyNvQnxgAd/Lw/k194I8NgD+ZPc2aO92uAXCpYQDcIsCAYwQYcIwAA44RYMAxAgw4RoABxwgw4BgBBhwjwIBjBBhwjAADjhFgwDECDDhGgAHHCDDgGAEGHCPAgGMEGHCMAAOOEWDAMQIMOEaAAccIMOAYAQYcI8CAYwQYcIwAA44RYMAxAgw4RoABxwgw4BgBBhwjwIBjBBhwjAADjhFgwDECDDjWsMxeGACPdhvWJcCAUz80OmbfGQB3Ohf2TdZsdjesbU0D4EvbnjU2N7Pd/MtvDYAfmX29+X72ohiFbtu/8v/dNQAe7Nq5PdcXvQAryfnTcwPgwfN+Zi/vA29uZ18ZIQbC1snDW2S1J7v+582d7uf50xf5Y8MAhEJd3LfCK9lNf7P5svu0M2NfNjL7hwGo27capyqbzVdld/2/FGSbtU/zLz/JHx8bVRmYPs2OLCZYfWeH9tXms+zWAebfASz7TK2tFnyYAAAAAElFTkSuQmCC"},
+  profilePic: { type: String, default: DEFAULT_IMAGE_URL },
+  clinicPic: { type: String, default: DEFAULT_IMAGE_URL },
   speciality: {type: String, default:""},
   degree: {type: String, default:""},
   experience: {type: String, default:""},
   about: {type: String, default:""},
   available: { type: Boolean, default:true },
   fees: {type: Number, default:0},
-  address: {type: String, default:""},
+  address: { line1: { type: String, default: "" }, line2: { type: String, default: "" } },
+  isProfileComplete: { type: Boolean, default: false },
   rating: { type: Number, default:0 },
   date: { type: Date, default: Date.now },
   slots_booked: { type: Object, default: {} }, // Array of booked slots
@@ -26,6 +31,6 @@ const doctorSchema = new mongoose.Schema({
   ]
 }, { timestamps: true,minimize: false });
 
-const doctorModel = mongoose.models.doctor || mongoose.model("Doctor", doctorSchema);
+const doctorModel = mongoose.models.Doctor || mongoose.model("Doctor", doctorSchema);
 
 export default doctorModel;

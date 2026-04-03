@@ -1,10 +1,21 @@
 import {v2 as cloudinary} from "cloudinary";
+import { pickEnv } from "../utils/env.js";
 
 const connectCloudinary = async () =>{
+    const cloud_name = pickEnv(["CLOUDINARY_CLOUD_NAME", "CLOUDINARY_NAME"]);
+    const api_key = pickEnv(["CLOUDINARY_API_KEY"]);
+    const api_secret = pickEnv(["CLOUDINARY_API_SECRET", "CLOUDINARY_SECRET_KEY"]);
+
+    if (!cloud_name || !api_key || !api_secret) {
+        // Don't crash the server; uploads will return a clear error.
+        console.warn("Cloudinary env vars missing/incomplete; image uploads will be disabled.");
+        return;
+    }
+
     cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,    
-        api_secret: process.env.CLOUDINARY_SECRET_KEY
+        cloud_name,
+        api_key,
+        api_secret
     })      
 }
 

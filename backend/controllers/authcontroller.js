@@ -20,16 +20,16 @@ export const signup = async (req, res) => {
     const Model = getModelByRole(role);
 
     if (!validator.isEmail(email)) {
-                res.json({success: false, message: "Please enter a valid email"});
-            }
+      return res.status(400).json({ message: "Please enter a valid email" });
+    }
 
     const existing = await Model.findOne({ email });
     if (existing) return res.status(400).json({ message: "Email already exists" });
 
     
     if (password.length < 4) {
-                res.json({success: false, message: "Password must be at least 4 characters long"});
-            }
+          return res.status(400).json({ message: "Password must be at least 4 characters long" });
+        }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newAccount = new Model({ name, email, password: hashedPassword });
@@ -59,7 +59,10 @@ export const login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({ message: "Login successful", token, account });
+    const safeAccount = account.toObject ? account.toObject() : { ...account };
+    delete safeAccount.password;
+
+    res.json({ message: "Login successful", token, account: safeAccount });
   } catch (err) {
     res.status(500).json({ message: "Login failed", error: err.message });
   }

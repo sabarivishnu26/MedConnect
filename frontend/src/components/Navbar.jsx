@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { assets } from '../assets/assets'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { api } from "../lib/api";
 
 const Navbar = () => {
   const navigate = useNavigate()
@@ -8,6 +9,10 @@ const Navbar = () => {
 
   const [token, setToken] = useState(null)
   const [isDoctor, setIsDoctor] = useState(false)
+  const [doctorPic, setDoctorPic] = useState("")
+
+  const DEFAULT_IMAGE_URL =
+    "https://img.freepik.com/premium-vector/vector-flat-illustration-grayscale-avatar-user-profile-person-icon-gender-neutral-silhouette-profile-picture-suitable-social-media-profiles-icons-screensavers-as-templatex9xa_719432-2210.jpg?semt=ais_incoming&w=740&q=80";
 
   useEffect(() => {
     const savedToken = localStorage.getItem("token")
@@ -19,18 +24,40 @@ const Navbar = () => {
     } else {
       setToken(null)
       setIsDoctor(false)
+      setDoctorPic("")
     }
   }, [location])
+
+  useEffect(() => {
+    const fetchDoctorPic = async () => {
+      if (!token || !isDoctor) {
+        setDoctorPic("")
+        return
+      }
+      try {
+        const res = await api.get("/api/doctors/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const incoming = res.data?.doctor || res.data || {}
+        const raw = typeof incoming.profilePic === "string" ? incoming.profilePic.trim() : ""
+        setDoctorPic(raw)
+      } catch {
+        setDoctorPic("")
+      }
+    }
+
+    fetchDoctorPic()
+  }, [token, isDoctor])
 
   const handleLogout = () => {
     localStorage.removeItem("token")
     localStorage.removeItem("role")
     setToken(null)
     setIsDoctor(false)
+    setDoctorPic("")
     navigate("/")
   }
 
-  const doctorProfilePic = "https://randomuser.me/api/portraits/men/45.jpg"
   const userProfilePic = assets.profile_pic
 
   return (
@@ -59,7 +86,7 @@ const Navbar = () => {
           <div className='flex items-center gap-2 cursor-pointer group relative'>
             <img
               className='w-8 rounded-full'
-              src={isDoctor ? doctorProfilePic : userProfilePic}
+              src={isDoctor ? (doctorPic || DEFAULT_IMAGE_URL) : userProfilePic}
               alt=''
             />
             <img className='w-2.5' src={assets.dropdown_icon} alt='' />

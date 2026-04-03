@@ -13,6 +13,7 @@ import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Footer from './components/Footer'
 import DoctorProfile from './pages/DoctorProfile';
+import DoctorOnboarding from './pages/DoctorOnboarding';
 
 import DoctorDashboard from './pages/DoctorDashboard';
 
@@ -36,6 +37,7 @@ const App = () => {
         <Route path='/myappointments' element={<MyAppointments />} />
         <Route path='/appointment/:docId' element={<Appointment />} />
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+        <Route path="/doctor/onboarding" element={<DoctorOnboarding />} />
         <Route path="/doctor/profile" element={<DoctorProfile />} />
 
 

@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
 
-const authMiddleware = (req, res, next) => {
+// Generic JWT verifier for routes that allow both user & doctor.
+// Attaches the decoded payload to req.auth.
+const authToken = (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
 
@@ -9,18 +11,11 @@ const authMiddleware = (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // This middleware is intended for user-only routes.
-    if (decoded?.role && decoded.role !== "user") {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
-    req.user = decoded;
-
+    req.auth = decoded;
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ message: "Invalid token" });
   }
 };
 
-export default authMiddleware;
+export default authToken;

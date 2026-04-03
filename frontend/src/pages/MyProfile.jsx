@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { assets } from '../assets/assets'
-import axios from "axios";
+import { api } from "../lib/api";
 
 const MyProfile = () => {
 
@@ -19,7 +19,7 @@ const MyProfile = () => {
         const fetchProfile = async () => {
             try {
                 const token = localStorage.getItem("token");
-                const res = await axios.get("http://localhost:4000/api/user/profile", {
+                const res = await api.get("/api/user/profile", {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setUserData(res.data); // fill state with backend data
@@ -33,8 +33,8 @@ const MyProfile = () => {
     const saveProfile = async () => {
         try {
             const token = localStorage.getItem("token"); // assume stored after login
-            const res = await axios.put(
-                "http://localhost:4000/api/user/profile",
+            const res = await api.put(
+                "/api/user/profile",
                 userData,
                 { headers: { Authorization: `Bearer ${token}` } }
             );

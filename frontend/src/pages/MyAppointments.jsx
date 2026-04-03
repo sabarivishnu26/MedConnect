@@ -1,7 +1,35 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../lib/api";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+
+const DEFAULT_IMAGE_URL =
+  "https://img.freepik.com/premium-vector/vector-flat-illustration-grayscale-avatar-user-profile-person-icon-gender-neutral-silhouette-profile-picture-suitable-social-media-profiles-icons-screensavers-as-templatex9xa_719432-2210.jpg?semt=ais_incoming&w=740&q=80";
+
+function renderStatusStamp(status) {
+  switch (status) {
+    case "accepted":
+      return (
+        <div className="border-2 border-green-500 text-green-500 bg-transparent px-3 py-1 text-xs font-bold tracking-widest uppercase -rotate-12">
+          ACCEPTED
+        </div>
+      );
+    case "rejected":
+      return (
+        <div className="border-2 border-red-500 bg-red-200 text-red-600 px-3 py-1 text-xs font-bold tracking-widest uppercase -rotate-12">
+          REJECTED
+        </div>
+      );
+    case "cancelled":
+      return (
+        <div className="border border-gray-400 text-gray-600 bg-transparent px-3 py-1 text-xs font-bold tracking-widest uppercase -rotate-6">
+          CANCELLED
+        </div>
+      );
+    default:
+      return null;
+  }
+}
 
 function MyAppointments() {
   const [appointments, setAppointments] = useState([]);
@@ -14,11 +42,19 @@ function MyAppointments() {
     if (!token) return;
 
     try {
-      const decoded = jwtDecode(token);
+      let decoded;
+      try {
+        decoded = jwtDecode(token);
+      } catch {
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        navigate("/login");
+        return;
+      }
       const userId = decoded.id || decoded._id;
 
-      const res = await axios.get(
-        `http://localhost:4000/api/appointments/user/${userId}`,
+      const res = await api.get(
+        `/api/appointments/user/${userId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -35,19 +71,15 @@ function MyAppointments() {
     fetchAppointments();
   }, []);
 
-  const handleCompletedClick = (id) => {
-    alert("Download prescription for appointment " + id);
-    
-  };
-
   const handleCancel = async (appointmentId) => {
     if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
     const token = localStorage.getItem("token");
     console.log("Cancelling appointment with ID:", appointmentId);
 
     try {
-      await axios.delete(
-        `http://localhost:4000/api/appointments/cancel/${appointmentId}`,
+      await api.patch(
+        `/api/appointments/${appointmentId}/cancel`,
+        {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Appointment cancelled");
@@ -73,14 +105,17 @@ function MyAppointments() {
         ) : (
           appointments.map((item, index) => (
             <div
-              className="grid grid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-2 border-b"
+              className="relative grid grid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-2 border-b"
               key={index}
             >
+              <div className="absolute top-2 right-2">
+                {renderStatusStamp(item.status)}
+              </div>
               <div>
                 <img
-                  onClick={() => navigate(`/appointment/${item._id}`)}
+                  onClick={() => item.doctor?._id && navigate(`/appointment/${item.doctor._id}`)}
                   className="w-32 bg-indigo-50 cursor-pointer hover:translate-y-[-10px] transition-all duration-500"
-                  src={item.doctor?.image || "/default-doctor.png"}
+                  src={(typeof item.doctor?.profilePic === "string" && item.doctor.profilePic.trim()) ? item.doctor.profilePic : DEFAULT_IMAGE_URL}
                   alt=""
                 />
               </div>
@@ -89,20 +124,6 @@ function MyAppointments() {
                   <p className="text-neutral-800 font-semibold">
                     {item.doctor?.name}
                   </p>
-                  {item.status === "completed" && (
-                    <>
-                      <span className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium ">
-                        Completed
-                      </span>
-                      <button
-                        className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium hover:bg-blue-200 transition"
-                        onClick={() => handleCompletedClick(item._id)}
-                        title="View Prescription"
-                      >
-                        Download Prescription
-                      </button>
-                    </>
-                  )}
                 </div>
 
                 <p>{item.doctor?.speciality}</p>
@@ -118,7 +139,7 @@ function MyAppointments() {
               </div>
               <div></div>
               <div className="flex flex-col gap-2 justify-end">
-                {item.status !== "completed" && (
+                {item.status === "pending" && (
                   <>
                     <button className="text-sm text-stone-500 text-center sm:min-w-48 py-2 hover:bg-primary hover:text-white transition-all duration-300">
                       Pay Online

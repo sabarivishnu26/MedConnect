@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../lib/api";
 
 export const AppContext = createContext();
 
@@ -11,7 +11,7 @@ const AppContextProvider = (props) => {
     useEffect(() => {
         const fetchDoctors = async () => {
             try {
-                const res = await axios.get("http://localhost:4000/api/doctors")
+                const res = await api.get("/api/doctors")
                 console.log("Doctors from backend:", res.data) // ✅ DEBUG
                 setDoctors(res.data)
             } catch (err) {

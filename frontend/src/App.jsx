@@ -14,8 +14,9 @@ import Home from './pages/Home'
 import Footer from './components/Footer'
 import DoctorProfile from './pages/DoctorProfile';
 import DoctorOnboarding from './pages/DoctorOnboarding';
-
 import DoctorDashboard from './pages/DoctorDashboard';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentCancel from './pages/PaymentCancel';
 
 
 
@@ -39,8 +40,8 @@ const App = () => {
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
         <Route path="/doctor/onboarding" element={<DoctorOnboarding />} />
         <Route path="/doctor/profile" element={<DoctorProfile />} />
-
-
+        <Route path='/payment-success' element={<PaymentSuccess />} />
+        <Route path='/payment-cancel' element={<PaymentCancel />} />
       </Routes>
       <Footer />
     </div>

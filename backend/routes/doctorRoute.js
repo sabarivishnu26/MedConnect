@@ -14,6 +14,8 @@ import express from "express";
 import { getDoctorProfile, updateDoctorProfile, getAllDoctors, getMyDoctorProfile, updateMyDoctorProfile } from "../controllers/doctorController.js";
 import { authDoctor } from "../middlewares/authDoctor.js";
 import { doctorImagesUpload } from "../middlewares/doctorImageUpload.js";
+import { cacheResponse } from "../middlewares/cacheMiddleware.js";
+import { cacheKeys, CACHE_TTL } from "../utils/cacheKeys.js";
 
 const router = express.Router();
 
@@ -31,9 +33,23 @@ router.put(
 	updateMyDoctorProfile
 );
 
-// Fetch doctor profile
-router.get("/:id", getDoctorProfile);
-router.get("/", getAllDoctors);
+// Fetch doctor list + profile (cached)
+router.get(
+  "/",
+  cacheResponse({
+    keyGenerator: () => cacheKeys.doctorsList(),
+    ttlSeconds: CACHE_TTL.DOCTORS_LIST,
+  }),
+  getAllDoctors
+);
+router.get(
+  "/:id",
+  cacheResponse({
+    keyGenerator: (req) => cacheKeys.doctorProfile(req.params.id),
+    ttlSeconds: CACHE_TTL.DOCTOR_PROFILE,
+  }),
+  getDoctorProfile
+);
 // Update doctor profile
 router.put("/:id", authDoctor, updateDoctorProfile);
 

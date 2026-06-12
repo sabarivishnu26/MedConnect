@@ -1,4 +1,5 @@
 import userModel from "../models/userModel.js";
+import { invalidatePatientCache } from "../utils/cacheInvalidation.js";
 
 // Get profile
 export const getProfile = async (req, res) => {
@@ -23,6 +24,8 @@ export const updateProfile = async (req, res) => {
     ).select("-password");
 
     if (!user) return res.status(404).json({ message: "User not found" });
+
+    await invalidatePatientCache(req.user.id);
     res.json({ message: "Profile updated successfully", user });
   } catch (error) {
     res.status(500).json({ message: "Error updating profile", error: error.message });

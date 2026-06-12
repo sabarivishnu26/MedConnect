@@ -26,6 +26,12 @@ function renderStatusStamp(status) {
           CANCELLED
         </div>
       );
+    case "paid":
+      return (
+        <div className="border-2 border-green-500 text-green-500 bg-transparent px-3 py-1 text-xs font-bold tracking-widest uppercase -rotate-12">
+          PAID
+        </div>
+      );
     default:
       return null;
   }
@@ -34,6 +40,7 @@ function renderStatusStamp(status) {
 function MyAppointments() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [paymentLoading, setPaymentLoading] = useState(null);
   const navigate = useNavigate();
 
   // 🔹 Global fetchAppointments function
@@ -71,6 +78,29 @@ function MyAppointments() {
     fetchAppointments();
   }, []);
 
+  const handlePayment = async (appointmentId) => {
+    console.log("API URL:", import.meta.env.VITE_API_URL);
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setPaymentLoading(appointmentId);
+    try {
+      const res = await api.post(
+        "/api/payment/create-checkout-session",
+        { appointmentId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data && res.data.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      console.error("Error initiating payment", err);
+      alert("Failed to initiate payment");
+      setPaymentLoading(null);
+      console.log(err);
+    }
+  };
+
   const handleCancel = async (appointmentId) => {
     if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
     const token = localStorage.getItem("token");
@@ -83,7 +113,7 @@ function MyAppointments() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Appointment cancelled");
-      fetchAppointments(); 
+      fetchAppointments();
     } catch (err) {
       console.error("Error cancelling appointment", err);
       alert("Failed to cancel appointment");
@@ -141,8 +171,12 @@ function MyAppointments() {
               <div className="flex flex-col gap-2 justify-end">
                 {item.status === "pending" && (
                   <>
-                    <button className="text-sm text-stone-500 text-center sm:min-w-48 py-2 hover:bg-primary hover:text-white transition-all duration-300">
-                      Pay Online
+                    <button
+                      onClick={() => handlePayment(item._id)}
+                      disabled={paymentLoading === item._id}
+                      className="text-sm text-stone-500 text-center sm:min-w-48 py-2 hover:bg-primary hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {paymentLoading === item._id ? "Processing..." : "Pay Online"}
                     </button>
                     <button
                       onClick={() => handleCancel(item._id)}
@@ -151,6 +185,11 @@ function MyAppointments() {
                       Cancel Appointment
                     </button>
                   </>
+                )}
+                {item.status === "paid" && (
+                  <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-500 bg-green-50 font-medium cursor-default">
+                    Paid
+                  </button>
                 )}
               </div>
             </div>

@@ -2,14 +2,20 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv/config";
 import connectDB from "./config/mongodb.js";
+import { connectRedis } from "./config/redis.js";
 import connectCloudinary from "./config/cloudinary.js";
 import authRoutes from "./routes/authRoute.js";
 import appointmentRoute from "./routes/appointmentRoute.js";
 import doctorRoute from "./routes/doctorRoute.js";
 import userRoute from "./routes/userRoute.js";
+import paymentRoute from "./routes/paymentRoute.js";
 import Appointment from "./models/appointmentModel.js";
+import logger from "./config/logger.js";
+import requestLogger from "./middlewares/requestLogger.js";
+import { notFoundHandler, errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 const requiredEnv = ["PORT", "MONGODB_URI", "JWT_SECRET"];
 for (const key of requiredEnv) {
@@ -25,40 +31,40 @@ if (!Number.isFinite(PORT)) {
 
 const startServer = async () => {
   await connectDB();
+  await connectRedis();
 
   try {
     await Appointment.syncIndexes();
-    console.log("Appointment indexes synced");
+    logger.info("Appointment indexes synced");
   } catch (err) {
-    console.error("Failed to sync appointment indexes:", err?.message || err);
+    logger.error("Failed to sync appointment indexes", { error: err?.message || String(err) });
   }
 
   connectCloudinary();
   app.use(cors());
   app.use(express.json());
-  app.use((req, res, next) => {
-    console.log("Request:", req.method, req.url);
-    next();
-  });
+  app.use(requestLogger);
 
-app.get("/", (req, res) => {
-  res.send("Backend working");
-});
+  app.get("/", (req, res) => {
+    res.send("Backend working");
+  });
 
 
   app.use("/api/auth", authRoutes);
   app.use("/api/appointments", appointmentRoute);
   app.use("/api/doctors", doctorRoute);
   app.use("/api/user", userRoute);
-  app.use("/api/doctors", doctorRoute);   // ✅ VERY IMPORTANT
+  app.use("/api/payment", paymentRoute);
 
-  // start
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+
   app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    logger.info(`Server running on http://localhost:${PORT}`);
   });
 };
 
 startServer().catch((err) => {
-  console.error(err);
+  logger.error("Failed to start server", { error: err.message, stack: err.stack });
   process.exit(1);
 });

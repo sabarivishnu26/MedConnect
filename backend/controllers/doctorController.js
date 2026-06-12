@@ -27,6 +27,7 @@ export {registerDoctor};*/
 import doctorModel from "../models/doctorModel.js";
 import { uploadBufferToCloudinary } from "../utils/cloudinaryUpload.js";
 import { pickEnv } from "../utils/env.js";
+import { invalidateDoctorCache } from "../utils/cacheInvalidation.js";
 
 const DEFAULT_IMAGE_URL =
   "https://img.freepik.com/premium-vector/vector-flat-illustration-grayscale-avatar-user-profile-person-icon-gender-neutral-silhouette-profile-picture-suitable-social-media-profiles-icons-screensavers-as-templatex9xa_719432-2210.jpg?semt=ais_incoming&w=740&q=80";
@@ -144,6 +145,8 @@ export const updateDoctorProfile = async (req, res) => {
       { new: true, runValidators: true }
     );
     if (!doctor) return res.status(404).json({ message: "Doctor not found" });
+
+    await invalidateDoctorCache(req.params.id);
     res.json(normalizeDoctorAddress(doctor));
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -263,6 +266,7 @@ export const updateMyDoctorProfile = async (req, res) => {
     await doctor.save();
 
     const saved = await doctorModel.findById(req.doctor._id).select("-password");
+    await invalidateDoctorCache(req.doctor._id.toString());
     res.json(normalizeDoctorAddress(saved));
   } catch (error) {
     res.status(500).json({ message: error.message });

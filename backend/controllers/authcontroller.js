@@ -2,7 +2,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
 import Doctor from "../models/doctorModel.js";
-import validator from "validator"
+import validator from "validator";
+import { logAuthSuccess, logAuthFailure, logError } from "../utils/logEvents.js";
 
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -43,15 +44,23 @@ export const signup = async (req, res) => {
 
 // LOGIN
 export const login = async (req, res) => {
+  const { email, password, role } = req.body;
+  const ip = req.ip;
+
   try {
-    const { email, password, role } = req.body;
     const Model = getModelByRole(role);
 
     const account = await Model.findOne({ email });
-    if (!account) return res.status(404).json({ message: `${role} not found` });
+    if (!account) {
+      logAuthFailure({ email, role, reason: "account_not_found", ip });
+      return res.status(404).json({ message: `${role} not found` });
+    }
 
     const isMatch = await bcrypt.compare(password, account.password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+    if (!isMatch) {
+      logAuthFailure({ email, role, reason: "invalid_credentials", ip });
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
     const token = jwt.sign(
       { id: account._id, role },
@@ -62,8 +71,10 @@ export const login = async (req, res) => {
     const safeAccount = account.toObject ? account.toObject() : { ...account };
     delete safeAccount.password;
 
+    logAuthSuccess({ email, role, userId: account._id, ip });
     res.json({ message: "Login successful", token, account: safeAccount });
   } catch (err) {
+    logError("Login error", err, { email, role, ip });
     res.status(500).json({ message: "Login failed", error: err.message });
   }
 };

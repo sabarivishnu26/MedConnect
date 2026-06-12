@@ -1,6 +1,8 @@
 import Appointment from "../models/appointmentModel.js";
 import doctorModel from "../models/doctorModel.js";
 import mongoose from "mongoose";
+import { logAppointmentCreated, logError } from "../utils/logEvents.js";
+import { invalidateAppointmentCaches } from "../utils/cacheInvalidation.js";
 
 const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -62,8 +64,6 @@ const getAllowedTimesForDoctorOnDate = (doctor, dateStr) => {
 
 export const bookAppointment = async (req, res) => {
   try {
-    console.log("Booking request:", req.body);
-
     const userId = req.user.id; // ✅ from token
 
     const { doctorId, doctor, date, time, reason } = req.body;
@@ -148,9 +148,24 @@ export const bookAppointment = async (req, res) => {
       { $addToSet: { [`slots_booked.${date}`]: time } }
     );
 
+    logAppointmentCreated({
+      appointmentId: appointment._id,
+      userId,
+      doctorId: resolvedDoctorId,
+      date,
+      time,
+    });
+
+    await invalidateAppointmentCaches({
+      userId,
+      doctorId: resolvedDoctorId,
+      date,
+    });
+
     res.status(201).json(appointment);
 
   } catch (err) {
+    logError("Appointment booking error", err, { userId: req.user?.id });
     res.status(400).json({ error: err.message });
   }
 };
@@ -235,7 +250,6 @@ export const getDoctorAppointmentsByDate = async (req, res) => {
 export const cancelAppointment = async (req, res) => {
   try {
     const { appointmentId } = req.params;
-    console.log("Received request to cancel appointment with ID:", appointmentId);
 
     // authMiddleware attaches req.user
     if (!req.user?.id) return res.status(401).json({ message: "Unauthorized" });
@@ -261,6 +275,12 @@ export const cancelAppointment = async (req, res) => {
       { _id: appointment.doctor },
       { $pull: { [`slots_booked.${appointment.date}`]: appointment.time } }
     );
+
+    await invalidateAppointmentCaches({
+      userId: appointment.user,
+      doctorId: appointment.doctor,
+      date: appointment.date,
+    });
 
     res.json(appointment);
   } catch (err) {
@@ -288,6 +308,12 @@ export const acceptAppointment = async (req, res) => {
 
     appointment.status = "accepted";
     await appointment.save();
+
+    await invalidateAppointmentCaches({
+      userId: appointment.user,
+      doctorId: appointment.doctor,
+      date: appointment.date,
+    });
 
     res.json(appointment);
   } catch (err) {
@@ -321,6 +347,12 @@ export const rejectAppointment = async (req, res) => {
       { _id: appointment.doctor },
       { $pull: { [`slots_booked.${appointment.date}`]: appointment.time } }
     );
+
+    await invalidateAppointmentCaches({
+      userId: appointment.user,
+      doctorId: appointment.doctor,
+      date: appointment.date,
+    });
 
     res.json(appointment);
   } catch (err) {

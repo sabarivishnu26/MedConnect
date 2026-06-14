@@ -39,7 +39,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
 
           script: |
-            cd ~/medconnect
+            cd ~/MedConnect
 
             git pull origin main
 

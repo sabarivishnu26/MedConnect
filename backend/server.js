@@ -13,6 +13,8 @@ import Appointment from "./models/appointmentModel.js";
 import logger from "./config/logger.js";
 import requestLogger from "./middlewares/requestLogger.js";
 import { notFoundHandler, errorHandler } from "./middlewares/errorHandler.js";
+import { client } from "./metrics.js";
+import metricsMiddleware from "./middlewares/metricsMiddleware.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -44,9 +46,28 @@ const startServer = async () => {
   app.use(cors());
   app.use(express.json());
   app.use(requestLogger);
+  app.use(metricsMiddleware);
 
   app.get("/", (req, res) => {
     res.send("Backend working");
+  });
+
+  app.get("/health", (req, res) => {
+    res.json({
+      status: "UP",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    });
+  });
+
+  app.get("/metrics", async (req, res) => {
+    try {
+      res.setHeader("Content-Type", client.register.contentType);
+      res.send(await client.register.metrics());
+    } catch (err) {
+      logger.error("Failed to generate metrics", { error: err.message });
+      res.status(500).send(err.message);
+    }
   });
 
 
